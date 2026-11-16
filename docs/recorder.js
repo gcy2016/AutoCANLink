@@ -5,7 +5,7 @@ const Recorder = (() => {
   const HDR = 16;                               // 每帧头：t(8) id(4) len(1) flags(1) ch(1) dlc(1)
   // flags：1=发送 2=CAN FD 4=远程帧 8=BRS 16=扩展帧 32=ESI
 
-  const MARK_ID = 0x1FFFFFF0;   // 标记帧 ID（29 位扩展帧）。CANalyzer 离线不导入文件里的标记，
+  const MARK_ID = 0x1FFFFFF0;   // 标记CAN ID（29 位扩展帧）。CANalyzer 离线不导入文件里的标记，
                                 // 改在标记时刻记一帧普通报文，Trace 里按 ID 过滤即可定位。
   function markerFrame(t, no, ch) {   // t：相对秒；no：标记序号（从 1）；ch：跟随最近一帧的通道
     const data = new Uint8Array(8);

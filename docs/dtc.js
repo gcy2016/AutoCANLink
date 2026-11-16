@@ -15,7 +15,7 @@
 //   例：52 34 00 → C1234
 const DTC = (() => {
   const ID = 0x6AA;                        // 默认故障码帧的 CAN ID
-  const MAX_ID = 0x1FFFFFFF;               // 帧 ID 上限（29 位，扩展帧最大编号）
+  const MAX_ID = 0x1FFFFFFF;               // CAN ID 上限（29 位，扩展帧最大编号）
   const DEFAULT_IDS = [ID];                // 默认监听列表（只存编号）
   const LETTER = ['P', 'C', 'B', 'U'];
 
@@ -26,13 +26,13 @@ const DTC = (() => {
   // 用户输入 → 数字；出错时抛中文提示。
   function parseId(text) {
     let t = String(text == null ? '' : text).trim();
-    if (!t) throw new Error('请输入帧 ID，例如 0x6AA');
+    if (!t) throw new Error('请输入CAN ID，例如 0x6AA');
     if (/^0x/i.test(t)) t = t.slice(2).trim();
     if (!t) throw new Error('0x 后面还要有十六进制数字，例如 0x6AA');
-    if (!/^[0-9a-f]+$/i.test(t)) throw new Error('帧 ID 只能是十六进制数字（0-9、A-F），例如 0x6AA');
+    if (!/^[0-9a-f]+$/i.test(t)) throw new Error('CAN ID 只能是十六进制数字（0-9、A-F），例如 0x6AA');
     t = t.replace(/^0+(?=.)/, '');          // 去掉前导 0，避免超长输入绕过范围检查
     if (t.length > 8 || parseInt(t, 16) > MAX_ID) {
-      throw new Error(`帧 ID 超出范围（0x000–0x${MAX_ID.toString(16).toUpperCase()}）`);
+      throw new Error(`CAN ID 超出范围（0x000–0x${MAX_ID.toString(16).toUpperCase()}）`);
     }
     return parseInt(t, 16);
   }

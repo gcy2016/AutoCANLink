@@ -174,7 +174,7 @@
       <button class="dtc-add" id="btnDtcAddOpen">+ 添加 ID</button>
     </div>
     <div class="dtcids-box">
-      <div class="dtcids-head"><b>监听的帧 ID</b><span class="hint" id="dtcIdsCount"></span></div>
+      <div class="dtcids-head"><b>监听的CAN ID</b><span class="hint" id="dtcIdsCount"></span></div>
       <div id="dtcIds" class="dtcids"></div>
     </div>
     <div id="dtcList" class="hint"></div>
@@ -483,8 +483,8 @@
 
 <div id="dtcAddModal" class="modal" hidden>
   <div class="card modal-box">
-    <h2>添加监听帧 ID</h2>
-    <div class="fld">帧 ID（十六进制，0x 可写可不写）
+    <h2>添加监听CAN ID</h2>
+    <div class="fld">CAN ID（十六进制，0x 可写可不写）
       <input type="text" id="dtcIdInput" class="mono" placeholder="例如 0x6AA" autocomplete="off" spellcheck="false">
     </div>
     <div class="hint" id="dtcAddErr" style="color:var(--bad);min-height:18px"></div>

@@ -1377,7 +1377,7 @@
     const box = $('dtcList');
     if (!S.open) { box.innerHTML = ''; return; }   // 通道没开时不显示任何状态（未开启 / 监听中都不显示）
     if (!S.dtcOn) { box.innerHTML = '<span class="hint">未开启。</span>'; return; }
-    if (!dtcIds.length) { box.innerHTML = '<span class="hint">监听列表为空：先添加要监听的帧 ID。</span>'; return; }
+    if (!dtcIds.length) { box.innerHTML = '<span class="hint">监听列表为空：先添加要监听的CAN ID。</span>'; return; }
     if (!dtcSeen.size) {
       box.innerHTML = `<span class="hint">监听中：等待 ${dtcIds.map(x => esc(DTC.idText(x))).join('、')} 的帧…</span>`;
       return;
@@ -1431,7 +1431,7 @@
     renderDtc();
   }
 
-  // 添加走弹窗：点「添加」打开，输帧 ID 后确认；输错了在弹窗里提示、不关窗。
+  // 添加走弹窗：点「添加」打开，输CAN ID 后确认；输错了在弹窗里提示、不关窗。
   function openDtcAdd() {
     $('dtcAddErr').textContent = '';
     $('dtcIdInput').value = '';
