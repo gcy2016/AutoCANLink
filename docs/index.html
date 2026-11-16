@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>CAN 工具</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#22507f">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root {
+    --bg: #f4f7fb; --card: #fff; --text: #1d2733; --muted: #6b7a8c;
+    --blue: #2a6db5; --blue-d: #22507f; --blue-l: #e8f0fa; --line: #d5dde8;
+    --ok: #2e8b57; --warn: #c27c0e; --bad: #c0392b; --hl: #fff2b3;
+    --mono: ui-monospace, Menlo, Consolas, "Roboto Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  header { background: linear-gradient(135deg, var(--blue-d), var(--blue)); color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,.18); white-space: nowrap; }
+  .chip.on { background: #3fa86b; } .chip.err { background: #d0533f; }
+  #chipRec { background: #d0533f; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #fff; margin-right: 5px; vertical-align: 1px; animation: blink 1s steps(2, start) infinite; }
+  @keyframes blink { to { visibility: hidden; } }
+  details > summary { cursor: pointer; font-weight: 600; color: var(--blue-d); }
+  details.card > summary { font-size: 16px; }
+  #stat { flex-basis: 100%; min-height: 1.5em; text-align: right; font-size: 12px; opacity: .92; font-family: var(--mono); }
+  #chipRec { visibility: hidden; } #chipRec.show { visibility: visible; }
+  nav { display: flex; background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; overflow-x: auto; }
+  nav button { flex: 1; min-width: 64px; border: 0; background: none; padding: 11px 6px; font-size: 15px; color: var(--muted); border-bottom: 3px solid transparent; cursor: pointer; }
+  nav button.on { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+  main { max-width: 1100px; margin: 0 auto; padding: 12px 16px 40px; }
+  section { display: none; } section.on { display: block; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .sticktop { position: sticky; top: 55px; z-index: 4; box-shadow: 0 6px 16px rgba(20, 40, 80, .12); }
+  .sticktop #diagOut { max-height: 36vh; overflow-y: auto; }
+  .modal { position: fixed; inset: 0; background: rgba(10, 22, 44, .48); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 60; }
+  .modal[hidden] { display: none; }
+  .modal-box { width: 100%; max-width: 560px; max-height: 88vh; overflow: auto; margin: 0; }
+  .markstext { white-space: pre-wrap; word-break: break-all; font-family: var(--mono); font-size: 12px; background: rgba(20, 40, 80, .05); border: 1px solid var(--line); border-radius: 8px; padding: 10px; max-height: 44vh; overflow: auto; }
+  .mkrow { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+  .mkrow .mkt { flex: 0 0 136px; font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .mkrow input { flex: 1 1 auto; min-width: 100px; max-width: 230px; }
+  .dtcrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 5px 0; border-top: 1px dashed var(--line); }
+  .dtcrow:first-child { border-top: 0; padding-top: 0; }
+  .dtcrow b { font-family: var(--mono); font-size: 15px; color: var(--blue-d); }
+  .dtc-head { justify-content: space-between; flex-wrap: nowrap; }
+  .dtc-add { border: 0; background: none; color: var(--blue); font-size: 15px; padding: 6px 2px; cursor: pointer; white-space: nowrap; }
+  .dtcids-box { background: var(--blue-l); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+  .dtcids-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .dtcids-head b { font-size: 13px; color: var(--blue-d); }
+  .dtcids { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dtcchip { display: inline-flex; align-items: center; gap: 5px; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 2px 2px 2px 10px; font-family: var(--mono); font-size: 13px; color: var(--blue-d); }
+  .dtcchip button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 3px 7px; border-radius: 999px; }
+  .dtcchip button:hover { background: #fbe9e7; color: var(--bad); }
+  .saverow { flex-wrap: nowrap; gap: 8px; }
+  .saverow > select, .saverow > input { min-width: 0; }
+  .saverow #recName { flex: 1 1 auto; width: 0; max-width: 260px; }
+  .saverow .b { padding-left: 10px; padding-right: 10px; }
+  @media (max-width: 600px) { .saverow .b { flex: 1 1 auto; padding-left: 4px; padding-right: 4px; font-size: 14px; } .saverow #btnMarks { flex-grow: 2; } }
+  .card h2 { margin: 0 0 10px; font-size: 16px; color: var(--blue-d); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-bottom: 10px; }
+  .row:last-child { margin-bottom: 0; }
+  label { display: inline-flex; align-items: center; gap: 6px; }
+  .fld { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--muted); }
+  input, select, button { font: inherit; }
+  input[type=text], input[type=number], select, textarea { padding: 7px 9px; border: 1.5px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); min-width: 0; }
+  textarea { font-family: var(--mono); font-size: 13px; line-height: 1.5; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); }
+  input.mono { font-family: var(--mono); }
+  button.b { padding: 8px 14px; border-radius: 8px; border: 1.5px solid var(--blue); background: #fff; color: var(--blue); cursor: pointer; white-space: nowrap; }
+  button.b.p { background: var(--blue); color: #fff; }
+  button.b.r { border-color: var(--bad); color: var(--bad); }
+  button.b:disabled { opacity: .45; cursor: default; }
+  .ctrlrow select, .ctrlrow input[type=text], .ctrlrow .b { height: 40px; }
+  .ctrlrow select { padding-top: 0; padding-bottom: 0; }
+  .tgl .t-on { display: none; }
+  .tgl input:checked ~ .t-off { display: none; }
+  .tgl input:checked ~ .t-on { display: inline; }
+  .hint { font-size: 13px; color: var(--muted); }
+  .warn { color: var(--warn); } .bad { color: var(--bad); } .good { color: var(--ok); }
+  .kv { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .kv div { background: var(--blue-l); border-radius: 8px; padding: 6px 10px; }
+  .kv b { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+  .kv span { font-family: var(--mono); }
+  .kv3 { grid-template-columns: repeat(3, 1fr); }
+  .kv3 div { padding: 4px 8px; }
+  .seg { display: inline-flex; border: 1.5px solid var(--blue); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; background: #fff; color: var(--blue); padding: 6px 12px; cursor: pointer; }
+  .seg button.on { background: var(--blue); color: #fff; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+  th { text-align: left; font-family: inherit; font-weight: 600; color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--line); padding: 4px 6px; position: sticky; top: 0; background: var(--card); }
+  td { padding: 3px 6px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+  td.d { word-break: normal; overflow-wrap: anywhere; }
+  th { white-space: nowrap; }
+  tr.tx td { color: var(--blue-d); }
+  .ch { background: var(--hl); border-radius: 2px; }
+  .tbl { max-height: 65vh; overflow: auto; }
+  .r { text-align: right; }
+  .sendrow { display: grid; grid-template-columns: auto minmax(120px, 180px) 1fr; gap: 8px; align-items: center; border-top: 1px dashed var(--line); padding: 8px 0; }
+  .sendrow:first-child { border-top: 0; }
+  .didrow { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; border-top: 1px dashed var(--line); padding: 6px 0; }
+  .didrow:first-child { border-top: 0; padding-top: 0; }
+  .swp { position: relative; overflow: hidden; }
+  .swp-in { position: relative; background: var(--card); touch-action: pan-y; transition: transform .18s ease; }
+  .swp-del { position: absolute; top: 0; right: 0; bottom: 0; width: 72px; border: 0; background: #d3382c; color: #fff; font-size: 15px; }
+  .swp:first-child .didrow, .swp:first-child .sendrow { border-top: 0; }
+  .rtnrow { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; padding: 6px 0; }
+  .delx { flex: 0 0 auto; width: 30px; padding-left: 0; padding-right: 0; color: var(--muted); }
+  .sendrow .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 4px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .bar { height: 8px; background: var(--blue-l); border-radius: 4px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--blue); width: 0; }
+  #log, #fLog { font-family: var(--mono); font-size: 12px; white-space: pre-wrap; max-height: 160px; overflow: auto; color: var(--muted); }
+  .frow { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .fbtn { display: inline-block; padding: 9px 16px; border-radius: 8px; border: 1.5px solid var(--blue); background: var(--blue); color: #fff; cursor: pointer; white-space: nowrap; font-weight: 600; }
+  .fbtn:active { opacity: .85; }
+  #fSteps .fstep { padding: 3px 0; font-size: 13px; }
+  #fSteps .fstep.ok { color: var(--ok); } #fSteps .fstep.run { color: var(--blue); font-weight: 600; } #fSteps .fstep.fail { color: var(--bad); font-weight: 600; }
+  ol { padding-left: 20px; margin: 6px 0; } li { margin: 3px 0; }
+  @media (max-width: 899px) { input[type=text], input[type=number], select { font-size: 16px; } .ctrlrow select, .ctrlrow input[type=text], .ctrlrow .b { height: 41px; } }
+  @media (max-width: 600px) {
+    main { padding: 10px 10px 40px; }
+    .hide-s { display: none; }
+    table { font-size: 12px; }
+    .sendrow { grid-template-columns: auto minmax(64px, 100px) 1fr; gap: 6px; }
+    nav button { font-size: 14px; min-width: 56px; }
+  }
+  .tgl.off { opacity: .45; }
+</style>
+</head>
+<body>
+<header>
+  <h1>CAN 工具</h1>
+  <span class="chip" id="chipDev">未连接</span>
+  <span class="chip" id="chipBus">通道关闭</span>
+  <span class="chip" id="chipRec"><i class="dot"></i>录制中</span>
+  <span id="stat"></span>
+</header>
+<nav id="tabs">
+  <button data-t="rec" class="on">录制</button>
+  <button data-t="trace">查看</button>
+  <button data-t="send">诊断</button>
+  <button data-t="flash">刷写</button>
+  <button data-t="cfg">设置</button>
+</nav>
+<main>
+
+<section id="rec" class="on">
+  <div class="card">
+    <div class="row">
+      <button class="b p" id="btnConn">连接设备</button>
+      <span class="hint" id="devInfo" style="flex:1;min-width:150px">未连接。</span>
+    </div>
+    <div class="row">
+      <button class="b" id="btnChan" disabled>打开通道</button>
+      <button class="b" id="btnRec">开始录制</button>
+      <button class="b" id="btnMark" disabled>打标记</button>
+    </div>
+    <div class="hint" id="noApi" hidden></div>
+    <div class="kv kv3" style="margin-top:10px">
+      <div><b>时长</b><span id="rDur">—</span></div>
+      <div><b>帧数</b><span id="rCnt">—</span></div>
+      <div><b>标记</b><span id="rMarks">—</span></div>
+    </div>
+    <div class="row dtc-head" style="margin-top:12px">
+      <label><input type="checkbox" id="dtcOn"> 故障码监听</label>
+      <button class="dtc-add" id="btnDtcAddOpen">+ 添加 ID</button>
+    </div>
+    <div class="dtcids-box">
+      <div class="dtcids-head"><b>监听的帧 ID</b><span class="hint" id="dtcIdsCount"></span></div>
+      <div id="dtcIds" class="dtcids"></div>
+    </div>
+    <div id="dtcList" class="hint"></div>
+    <div id="markList"></div>
+  </div>
+
+
+  <div class="card">
+    <h2>保存数据</h2>
+    <div class="row saverow">
+      <select id="range" aria-label="保存范围"><option value="all">全部</option><option value="marks">两个标记之间</option><option value="last">最后一段</option><option value="custom">自定义时间</option></select>
+      <select id="recFmt" aria-label="保存格式"><option value="blf" selected>BLF</option><option value="asc">ASC</option></select>
+      <input type="text" id="recName" placeholder="文件名">
+    </div>
+    <div class="row" id="rangeRow" hidden>
+      <div class="fld" id="fMarks" hidden>从 / 到
+        <span style="display:flex;gap:6px"><select id="mFrom"></select><select id="mTo"></select></span></div>
+      <div class="fld" id="fLast" hidden>最后多少秒<input type="number" id="lastSec" value="60" min="1" style="width:100px"></div>
+      <div class="fld" id="fCustom" hidden>从 / 到（秒）
+        <span style="display:flex;gap:6px"><input type="number" id="cFrom" value="0" style="width:90px"><input type="number" id="cTo" value="60" style="width:90px"></span></div>
+    </div>
+    <div class="row saverow">
+      <button class="b p" id="btnSave" disabled>下载</button>
+      <button class="b" id="btnShare" disabled>分享</button>
+      <button class="b" id="btnView" disabled>查看</button>
+      <button class="b" id="btnMarks" disabled>导出标记清单</button>
+    </div>
+  </div>
+
+  <details class="card" id="busBox">
+    <summary>总线状态</summary>
+    <div class="kv" style="margin-top:10px">
+      <div><b>总线</b><span id="sBus">—</span></div>
+      <div><b>帧率</b><span id="sFps">—</span></div>
+      <div><b>负载率（估算）</b><span id="sLoad">—</span></div>
+      <div><b>错误计数 发/收</b><span id="sErr">—</span></div>
+      <div><b>丢帧</b><span id="sDrop">—</span></div>
+      <div><b>板子时钟误差</b><span id="sClk">—</span></div>
+    </div>
+    <div id="log"></div>
+  </details>
+</section>
+
+<section id="trace">
+  <div class="row" style="margin-bottom:10px">
+    <div class="seg" id="tmode"><button data-v="online" class="on">在线报文</button><button data-v="offline">离线数据</button></div>
+    <span class="hint" id="tmodeHint"></span>
+  </div>
+  <div id="onlineBox">
+  <div class="card">
+    <div class="row">
+      <div class="seg" id="view"><button data-v="fixed" class="on">按 ID</button><button data-v="scroll">滚动</button></div>
+      <button class="b" id="btnPause">暂停</button>
+      <button class="b" id="btnClear">清空</button>
+      <input type="text" id="filter" class="mono" placeholder="过滤 ID，如 7E0,7E8 或 700-7FF" style="flex:1;min-width:180px">
+    </div>
+    <div class="hint" id="traceInfo"></div>
+  </div>
+  <div class="card tbl" id="traceBox"></div>
+  </div>
+  <div id="offlineBox" hidden>
+    <iframe id="viewerFrame" title="离线数据" style="width:100%;border:0;border-radius:12px;background:var(--bg);display:block"></iframe>
+  </div>
+</section>
+
+<section id="send">
+
+  <div class="card">
+    <h2>控制器</h2>
+    <div class="row ctrlrow" style="align-items:flex-end">
+      <div class="fld" style="flex:1;min-width:140px">选择控制器
+        <select id="ctrlSel"></select></div>
+      <button class="b" id="ctrlAdd">新增</button>
+      <button class="b r" id="ctrlDel">删除</button>
+    </div>
+    <div class="row ctrlrow" style="align-items:flex-end">
+      <div class="fld" style="flex:1;min-width:150px">请求 / 响应 ID<input type="text" class="mono" id="cPair" placeholder="如 780/788"></div>
+      <div class="fld">功能寻址 ID<input type="text" class="mono" id="cFunc" placeholder="如 7DF" style="width:92px"></div>
+      <div class="fld">填充字节<input type="text" class="mono" id="cPad" placeholder="00" style="width:64px"></div>
+    </div>
+    <div class="row">
+      <label class="tgl"><input type="checkbox" id="cFd" checked><span class="t-off">CAN</span><span class="t-on">CANFD</span></label>
+      <label class="tgl"><input type="checkbox" id="cBrs" checked><span class="t-off">BRS 关</span><span class="t-on">BRS 开</span></label>
+      <label class="tgl"><input type="checkbox" id="cExt"><span class="t-off">标准帧</span><span class="t-on">扩展帧</span></label>
+    </div>
+    <details style="margin-top:8px">
+      <summary>安全算法插件（本控制器，可选）</summary>
+      <div class="hint" style="margin:6px 0">粘贴这个控制器的 seed → key 算法（一段 JS 函数体，可用 seed、level、req，返回 key 字节）。留空就用配置包里载入的全局算法；都没有就不能自动算 key。算法只记在本机，不上传。</div>
+      <textarea id="cSec" style="width:100%;min-height:90px" placeholder="例如：const k = [...seed]; return k;"></textarea>
+    </details>
+  </div>
+
+  <div class="card sticktop">
+    <h2>诊断应答</h2>
+    <div id="diagOut" class="hint"></div>
+  </div>
+
+  <div class="card">
+    <h2>会话 / 安全 / 复位</h2>
+    <div class="row" id="diagBtns">
+      <button class="b" data-uds="10 01">默认会话</button>
+      <button class="b" data-uds="10 03">扩展会话</button>
+      <button class="b" data-uds="10 02">编程会话</button>
+      <button class="b" data-uds="11 01">硬复位</button>
+      <button class="b" data-uds="11 03">软复位</button>
+      <button class="b" id="btnTp">保持在线：关</button>
+    </div>
+    <div class="row" style="border-top:1px dashed var(--line);padding-top:10px">
+      <button class="b p" id="btnSec">安全访问解锁</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>故障码</h2>
+    <div class="row" style="flex-wrap:nowrap;align-items:flex-end">
+      <button class="b p" id="btnReadDtc">读故障码</button>
+      <button class="b r" id="btnClrDtc">清故障码</button>
+      <div class="fld" style="flex:0 0 auto">子功能<input type="text" class="mono" id="dtcSub" value="02 FF" style="width:84px"></div>
+    </div>
+    <div id="dtcBox" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <h2>读取数据（22）</h2>
+    <div id="didReadRows"></div>
+    <div class="row" style="margin-top:10px"><button class="b" id="btnAddReadDid">＋ 添加</button></div>
+  </div>
+
+  <div class="card">
+    <h2>写入数据（2E）</h2>
+    <div id="didWriteRows"></div>
+    <div class="row" style="margin-top:10px"><button class="b" id="btnAddWriteDid">＋ 添加</button></div>
+  </div>
+
+  <div class="card">
+    <h2>例程控制（31）</h2>
+    <div id="rtnRows"></div>
+    <div class="row" style="margin-top:10px"><button class="b" id="btnAddRtn">＋ 添加</button></div>
+  </div>
+
+  <div class="card">
+    <h2>常用指令</h2>
+    <div id="sendRows"></div>
+    <div class="row" style="margin-top:10px"><button class="b" id="btnAddSend">＋ 添加</button></div>
+  </div>
+
+  <details class="card" id="rawBox">
+    <summary>手动发送原始帧（不走 ISO-TP）</summary>
+    <div class="hint" id="sendHint" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:8px">
+      <div class="fld">发送 ID<input type="text" class="mono" id="sId" style="width:120px"></div>
+      <div class="fld">看回复 ID<input type="text" class="mono" id="sResp" placeholder="自动" style="width:120px"></div>
+      <div class="fld">循环周期 ms<input type="number" id="sCyc" min="1" style="width:100px"></div>
+    </div>
+    <div class="row">
+      <label class="tgl"><input type="checkbox" id="sExt"><span class="t-off">标准帧</span><span class="t-on">扩展帧</span></label>
+      <label class="tgl"><input type="checkbox" id="sFd"><span class="t-off">CAN</span><span class="t-on">CANFD</span></label>
+      <label class="tgl"><input type="checkbox" id="sBrs" checked><span class="t-off">BRS 关</span><span class="t-on">BRS 开</span></label>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <input type="text" id="rawData" class="mono" placeholder="原始数据，如 02 10 03" style="flex:1;min-width:160px">
+      <button class="b p" id="btnRawSend">发送</button>
+    </div>
+  </details>
+
+  <div class="card">
+    <h2>最近收发</h2>
+    <div class="tbl" id="respBox" style="max-height:40vh"></div>
+  </div>
+</section>
+
+<section id="flash">
+  <div class="card">
+    <h2>刷写</h2>
+    <div class="hint" id="fCtrl"></div>
+  </div>
+
+  <div class="card">
+    <h2>刷写文件</h2>
+    <div class="frow">
+      <label class="fbtn" for="fDrv">选择文件</label>
+      <input type="file" id="fDrv" accept=".s19,.s28,.s37,.srec,.mot,.hex,.ihex" hidden>
+      <span><b>Driver</b> <span class="hint" id="fDrvName"></span></span>
+    </div>
+    <div class="frow">
+      <label class="fbtn" for="fApp">选择文件</label>
+      <input type="file" id="fApp" accept=".s19,.s28,.s37,.srec,.mot,.hex,.ihex" hidden>
+      <span><b>App</b> <span class="hint" id="fAppName"></span></span>
+    </div>
+    <div class="hint" id="fInfo" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <button class="b p" id="fStart">开始刷写</button>
+      <button class="b r" id="fStop" hidden>停止</button>
+    </div>
+    <div class="bar" style="margin-top:12px"><i id="fBar"></i></div>
+    <div class="hint" id="fProg" style="margin-top:5px"></div>
+    <div id="fSteps" style="margin-top:10px"></div>
+    <div id="fLog" style="margin-top:8px"></div>
+  </div>
+
+  <details class="card">
+    <summary>刷写流程（高级：步骤、指令、等待时间）</summary>
+    <textarea id="fFlow" style="width:100%;min-height:240px"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="b" id="fFlowReset">恢复默认流程</button>
+      <button class="b" id="fFlowExport">导出</button>
+      <button class="b" id="fFlowImport">导入</button>
+      <input type="file" id="fFlowFile" accept=".json,application/json" hidden>
+      <span class="hint" id="fFlowSt"></span>
+    </div>
+  </details>
+</section>
+
+<section id="cfg">
+  <div class="card">
+    <h2>总线设置</h2>
+    <div class="row">
+      <div class="fld">仲裁段波特率
+        <select id="nomRate">
+          <option value="125000">125k</option><option value="250000">250k</option>
+          <option value="500000" selected>500k</option><option value="1000000">1M</option>
+        </select></div>
+      <div class="fld">采样点 %<input type="number" id="nomSp" value="80" min="50" max="95" step="0.5" style="width:84px"></div>
+      <label class="tgl" style="align-self:flex-end;padding-bottom:8px"><input type="checkbox" id="fdOn" checked><span class="t-off">CAN</span><span class="t-on">CANFD</span></label>
+    </div>
+    <div class="row" id="fdRow">
+      <div class="fld">数据段波特率
+        <select id="dataRate">
+          <option value="1000000">1M</option><option value="2000000" selected>2M</option>
+          <option value="4000000">4M</option><option value="5000000">5M</option><option value="8000000">8M</option>
+        </select></div>
+      <div class="fld">采样点 %<input type="number" id="dataSp" value="70" min="50" max="95" step="0.5" style="width:84px"></div>
+      <div class="fld">FD 类型
+        <select id="niso"><option value="0">ISO</option><option value="1">非 ISO（Bosch）</option></select></div>
+    </div>
+    <div class="row">
+      <div class="fld">模式
+        <div class="seg" id="mode"><button data-v="1" class="on">只听</button><button data-v="0">正常收发</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>固件</h2>
+    <div class="row" id="fwNow">当前：未连接</div>
+    <details style="margin-top:8px">
+      <summary>刷入 vdlink 固件</summary>
+      <div style="margin-top:6px">请使用安卓系统执行以下步骤。</div>
+      <ol>
+        <li>打开CANable外壳，把 <b>BOOT</b> 两个针脚用导线短接（注意不要短接到其他位置）。</li>
+        <li>保持短接状态下连接到当前设备，指示灯亮后可拿掉短接导线。</li>
+        <li>点刷入vdlink1.0，在弹窗里选 <b>STM32 BOOTLOADER</b>（或 DFU in FS Mode）。</li>
+        <li>等进度走完显示“完成”，即代表固件程序更新成功。</li>
+      </ol>
+      <div class="row" style="margin-top:10px"><button class="b p" id="btnFlash">刷入 vdlink 1.0</button></div>
+      <div class="bar"><i id="fwBar"></i></div>
+      <div class="hint" id="fwMsg"></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>配置包（我自己的资料）</h2>
+    <div class="hint" id="packSt" style="margin-bottom:8px"></div>
+    <div class="row">
+      <button class="b p" id="packImport">导入配置包</button>
+      <input type="file" id="packFile" accept=".json,application/json" hidden>
+      <div class="fld">配置包密码<input type="password" id="packPin" class="mono" placeholder="密码" autocomplete="off" style="width:150px"></div>
+      <button class="b" id="packUnlock">解锁</button>
+      <button class="b r" id="packClear">清除配置包</button>
+    </div>
+    <div class="hint" style="margin-top:6px">配置包是加密文件，里面是自己的控制器、安全算法、刷写流程和问卷 / DBC 资料。网页本身不内置任何车型资料；导入后密文只记在本机浏览器里，密码记在本机时下次自动解锁。</div>
+  </div>
+
+  <div class="card">
+    <h2>其他</h2>
+    <div class="row">
+      <button class="b" id="btnDemo">演示模式</button>
+    </div>
+    <div class="row">
+      <button class="b" id="btnExport">导出设置和常用指令</button>
+      <button class="b" id="btnImport">导入</button>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+    </div>
+    <div class="row">
+      <button class="b" id="btnLog">导出日志</button>
+    </div>
+  </div>
+</section>
+
+</main>
+<div id="fileModal" class="modal" hidden>
+  <div class="card modal-box">
+    <h2 id="fileTitle">标记清单</h2>
+    <div class="hint" id="fileName" style="margin-bottom:6px;word-break:break-all"></div>
+    <pre id="fileText" class="markstext"></pre>
+    <div class="row">
+      <button class="b p" id="btnFileDl">下载</button>
+      <button class="b" id="btnFileShare">分享</button>
+      <button class="b" id="btnFileClose">关闭</button>
+    </div>
+    <div class="hint" id="fileMsg"></div>
+  </div>
+</div>
+
+<div id="dtcAddModal" class="modal" hidden>
+  <div class="card modal-box">
+    <h2>添加监听帧 ID</h2>
+    <div class="fld">帧 ID（十六进制，0x 可写可不写）
+      <input type="text" id="dtcIdInput" class="mono" placeholder="例如 0x6AA" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="hint" id="dtcAddErr" style="color:var(--bad);min-height:18px"></div>
+    <div class="row">
+      <button class="b p" id="btnDtcAddOk">添加</button>
+      <button class="b" id="btnDtcAddCancel">取消</button>
+    </div>
+  </div>
+</div>
+<script src="data.js"></script>
+<script src="slcan.js"></script>
+<script src="recorder.js"></script>
+<script src="transport.js"></script>
+<script src="dtc.js"></script>
+<script src="demo.js"></script>
+<script src="dfu.js"></script>
+<script src="viewer/uds.js"></script>
+<script src="diag.js"></script>
+<script src="flashfile.js"></script>
+<script src="flash.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
