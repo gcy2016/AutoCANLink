@@ -371,7 +371,7 @@ const CanLog = (() => {
     return '不是 ISO-TP 诊断帧格式';
   }
 
-  // 解释一条完整的 UDS 报文（已重组）；U 为 tools/uds.json。返回若干行文字
+  // 解释一条完整的 UDS 报文（已重组）；U 为内置的 UDS 服务字典。返回若干行文字
   function udsExplain(p, U) {
     if (!p || !p.length || !U) return [];
     const k = H(p[0]), out = [], name = x => U.services[x] || '未知服务';

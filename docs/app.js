@@ -491,7 +491,7 @@
 
   // 控制器配置（本机保存，可导入导出；ID 等保密内容由用户填，不进仓库）
   let ctrls = store.get('ctrls', null);
-  if (!ctrls || !ctrls.length) ctrls = [{ name: '控制器 1', req: '7E0', resp: '7E8', func: '7DF', pad: '00', fd: true, brs: true, ext: false }];
+  if (!ctrls || !ctrls.length) ctrls = [{ name: '控制器 1', req: '', resp: '', func: '', pad: '00', fd: true, brs: true, ext: false }];
   let curCtrl = Math.min(store.get('ctrlCur', 0), ctrls.length - 1);
   const saveCtrls = () => { store.set('ctrls', ctrls); store.set('ctrlCur', curCtrl); };
   // 诊断页四个列表（常用指令 / 读 DID / 写 DID / 例程）跟控制器绑定：按控制器名各存一套
@@ -1082,7 +1082,7 @@
 
   // ---- 手动发送原始帧（不走 ISO-TP，用于非诊断报文 / 循环发送） ----
   // BRS 与 CANFD 联动：经典 CAN 没有 BRS，BRS 开关只在 CANFD 时可用（默认开）。
-  const SC = Object.assign({ id: '7DF', resp: '', cyc: 100, ext: false, fd: false, brs: true }, store.get('sendCfg', {}));
+  const SC = Object.assign({ id: '', resp: '', cyc: 100, ext: false, fd: false, brs: true }, store.get('sendCfg', {}));
   const cyclic = new Map();
   for (const [el, k] of Object.entries({ sId: 'id', sResp: 'resp', sCyc: 'cyc', sExt: 'ext', sFd: 'fd', sBrs: 'brs' })) {
     const x = $(el); if (x.type === 'checkbox') x.checked = !!SC[k]; else x.value = SC[k];

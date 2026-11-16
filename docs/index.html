@@ -229,7 +229,7 @@
       <div class="seg" id="view"><button data-v="fixed" class="on">按 ID</button><button data-v="scroll">滚动</button></div>
       <button class="b" id="btnPause">暂停</button>
       <button class="b" id="btnClear">清空</button>
-      <input type="text" id="filter" class="mono" placeholder="过滤 ID，如 7E0,7E8 或 700-7FF" style="flex:1;min-width:180px">
+      <input type="text" id="filter" class="mono" placeholder="过滤 ID（十六进制，逗号分隔或区间）" style="flex:1;min-width:180px">
     </div>
     <div class="hint" id="traceInfo"></div>
   </div>
@@ -251,8 +251,8 @@
       <button class="b r" id="ctrlDel">删除</button>
     </div>
     <div class="row ctrlrow" style="align-items:flex-end">
-      <div class="fld" style="flex:1;min-width:150px">请求 / 响应 ID<input type="text" class="mono" id="cPair" placeholder="如 780/788"></div>
-      <div class="fld">功能寻址 ID<input type="text" class="mono" id="cFunc" placeholder="如 7DF" style="width:92px"></div>
+      <div class="fld" style="flex:1;min-width:150px">请求 / 响应 ID<input type="text" class="mono" id="cPair" placeholder="十六进制"></div>
+      <div class="fld">功能寻址 ID<input type="text" class="mono" id="cFunc" placeholder="十六进制" style="width:92px"></div>
       <div class="fld">填充字节<input type="text" class="mono" id="cPad" placeholder="00" style="width:64px"></div>
     </div>
     <div class="row">

@@ -14,7 +14,8 @@
   const nBytes = (v, len) => { const a = new Array(len); for (let i = len - 1; i >= 0; i--) { a[i] = v & 0xFF; v = Math.floor(v / 256); } return a; };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-  // 默认刷写流程：标准 UDS 刷写顺序（和常见供应商工具一致）。用户可在界面里改。
+  // 默认刷写流程：标准 UDS 刷写顺序的通用模板。用户可在界面里改。
+  // 注意：例程编号等厂商自定义数值均为示例值，使用前必须按目标 ECU 的规范修改。
   // op 见下方 runFlash 的 switch；data 是十六进制字节；wait 是该步之后的等待毫秒。
   // disablesBus 标记“之后整车其他控制器被静默”，中途失败要跑 recovery 恢复。
   const DEFAULT_FLOW = {
@@ -26,14 +27,13 @@
       { op: 'func', name: '功能寻址扩展会话', data: '10 83' },
       { op: 'tp_on', name: '开始保持在线（3E 80）', interval: 2000 },
       { op: 'security', name: '安全访问（默认会话）', level: 1 },
-      { op: 'req', name: '编程预处理', data: '31 01 02 03' },
       { op: 'func', name: '关闭 DTC 记录', data: '85 82', disablesBus: true },
       { op: 'func', name: '停止接收报文', data: '28 83 03' },
       { op: 'func', name: '停止发送报文', data: '28 83 01' },
       { op: 'req', name: '进编程会话', data: '10 02', wait: 100 },
       { op: 'security', name: '安全访问（编程会话）', level: 1 },
       { op: 'fingerprint', name: '写指纹（日期 + 诊断仪编号）', did: 'F1 84' },
-      { op: 'flash', name: '刷写 Driver', file: 'driver', activate: true },
+      { op: 'flash', name: '刷写 Driver', file: 'driver', activate: true, rid: '02 02' },
       { op: 'flash', name: '刷写 App', file: 'app', erase: true },
       { op: 'req', name: '校验 App 可用', data: '31 01 FF 01' },
       { op: 'req', name: 'ECU 复位', data: '11 03', wait: 3000 },
@@ -148,7 +148,7 @@
           if (step.blockWait) await sleep(step.blockWait);
         }
         await uds([0x37]);                            // 37 退出传输
-        if (step.activate) { log('激活编程…'); await uds([0x31, 0x01, 0x02, 0x02, ...nBytes(addr, 4)]); }
+        if (step.activate) { log('激活编程…'); await uds([0x31, 0x01, ...parseHex(step.rid || '02 02'), ...nBytes(addr, 4)]); }
         log(`第 ${si + 1}/${segs.length} 段完成`, 'good');
       }
     }
