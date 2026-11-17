@@ -50,5 +50,5 @@ node test/test_web.js
 
 ## 许可
 
-- 网页代码（`docs/`、`test/`）：MIT，见 `LICENSE`
+- 网页代码（`docs/`、`test/`）：PolyForm Noncommercial 1.0.0——个人学习、研究等非商业用途免费，**禁止商业用途**，见 `LICENSE`
 - vdlink 固件（`firmware/`）：GPLv3，见 `firmware/LICENSE.md`（基于 slcan）
